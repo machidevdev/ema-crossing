@@ -2,8 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install required tools
-RUN apk add --no-cache openssl netcat-openbsd
+# Install required tools including bind-tools for DNS resolution
+RUN apk add --no-cache openssl netcat-openbsd bind-tools
 
 # Copy package files first
 COPY package*.json ./
