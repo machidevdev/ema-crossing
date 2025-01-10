@@ -1,6 +1,7 @@
 import { EMACross, Token } from '@prisma/client';
 import { bot } from './bot';
 import { getSubscribers } from './bot';
+import { generateCrossingChart } from './chart';
 
 export const notifyCrossing = async (cross: EMACross & { token: Token }) => {
   const emoji = cross.crossType === 'BULLISH' ? '🟢' : '🔴';
@@ -15,9 +16,22 @@ EMA60 has crossed ${cross.crossType === 'BULLISH' ? 'above' : 'below'} EMA223
 `;
 
   try {
+    // Generate chart
+    const chartBuffer = await generateCrossingChart(
+      cross.token.symbol,
+      cross.timeframe
+    );
+
     const subscribers = getSubscribers();
     for (const chatId of subscribers) {
-      await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      // Send photo with caption
+      await bot.telegram.sendPhoto(chatId, 
+        { source: chartBuffer },
+        { 
+          caption: message,
+          parse_mode: 'Markdown'
+        }
+      );
     }
   } catch (error) {
     console.error('Error sending notification:', error);
