@@ -1,18 +1,9 @@
 FROM node:20-alpine
 
-# Install OpenSSL
-RUN apk add --no-cache openssl
-
-# Install canvas dependencies
-RUN apk add --no-cache \
-    build-base \
-    cairo-dev \
-    pango-dev \
-    jpeg-dev \
-    giflib-dev \
-    librsvg-dev
-
 WORKDIR /app
+
+# Install required tools
+RUN apk add --no-cache openssl netcat-openbsd
 
 # Copy package files first
 COPY package*.json ./
@@ -21,14 +12,20 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm install
 
+# Copy wait-for script and make it executable
+COPY wait-for.sh /wait-for.sh
+RUN chmod +x /wait-for.sh
+
 # Copy rest of the code
 COPY . .
 
-# Clean previous builds and generate fresh
-RUN rm -rf dist/
+# Build
 RUN npm run build
-
-# Generate Prisma client
 RUN npm run prisma:generate
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"] 
+# Change ownership
+RUN chown -R node:node /app
+
+USER node
+
+CMD ["/bin/sh", "-c", "/wait-for.sh postgres:5432 -- npx prisma migrate deploy && npm start"] 

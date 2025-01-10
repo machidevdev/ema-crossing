@@ -8,13 +8,12 @@ services:
     networks:
       - app-network
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       BOT_TOKEN: ${BOT_TOKEN}
       TAAPI_API_KEY: ${TAAPI_API_KEY}
     depends_on:
-      postgres:
-        condition: service_healthy
-    command: sh -c "sleep 10 && npx prisma migrate deploy && npm start"
+      - postgres
 
   postgres:
     image: postgres:15-alpine
@@ -28,11 +27,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
 networks:
   app-network:
