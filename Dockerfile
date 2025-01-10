@@ -3,6 +3,15 @@ FROM node:20-alpine
 # Install OpenSSL
 RUN apk add --no-cache openssl
 
+# Install canvas dependencies
+RUN apk add --no-cache \
+    build-base \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev
+
 WORKDIR /app
 
 # Copy package files first

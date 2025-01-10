@@ -2,6 +2,7 @@ import { Telegraf } from 'telegraf';
 import prisma from './prisma';
 import fs from 'fs';
 import path from 'path';
+import { generateCrossingChart } from './chart';
 
 const SUBSCRIBERS_FILE = path.join(__dirname, '../../data/subscribers.json');
 
@@ -107,12 +108,18 @@ bot.command('help', (ctx) => {
 /subscribe - Subscribe to crossing notifications
 /status - Check bot status
 /crossings <symbol> - Show last 10 EMA crossings for a symbol
+/chart <symbol> <timeframe> - Get price chart with EMAs
 /help - Show this help message
 
 *Supported Symbols*
 - SOL
 - ETH
 - BTC
+
+*Timeframes*
+- 5m
+- 1h
+- 4h
 `;
   ctx.reply(help, { parse_mode: 'Markdown' });
 });
@@ -122,4 +129,30 @@ bot.command('subscribe', (ctx) => {
   const chatId = ctx.chat.id.toString();
   addSubscriber(chatId);
   ctx.reply('✅ You are now subscribed to EMA crossing notifications!');
+});
+
+// Add with other commands
+bot.command('chart', async (ctx) => {
+  const args = ctx.message.text.split(' ');
+  if (args.length !== 3) {
+    return ctx.reply('Usage: /chart <symbol> <timeframe>\nExample: /chart SOL 4h');
+  }
+
+  const [_, symbol, timeframe] = args;
+  const validTimeframes = ['5m', '1h', '4h'];
+  
+  if (!validTimeframes.includes(timeframe)) {
+    return ctx.reply(`Invalid timeframe. Please use: ${validTimeframes.join(', ')}`);
+  }
+
+  try {
+    const chartBuffer = await generateCrossingChart(symbol.toUpperCase(), timeframe);
+    await ctx.replyWithPhoto(
+      { source: chartBuffer },
+      { caption: `${symbol.toUpperCase()} ${timeframe} Chart` }
+    );
+  } catch (error) {
+    console.error('Error generating chart:', error);
+    ctx.reply('Error generating chart. Please try again later.');
+  }
 }); 
