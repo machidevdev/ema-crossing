@@ -5,6 +5,8 @@ services:
     build: .
     container_name: telegram-bot
     restart: unless-stopped
+    networks:
+      - app-network
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       BOT_TOKEN: ${BOT_TOKEN}
@@ -12,11 +14,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: sh -c "sleep 10 && npx prisma migrate deploy && npm start"
 
   postgres:
     image: postgres:15-alpine
     container_name: telegram-bot-db
     restart: unless-stopped
+    networks:
+      - app-network
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -28,6 +33,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
