@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Token {
+  id        Int       @id @default(autoincrement())
+  symbol    String    @unique
+  name      String?
+  prices    Price[]
+  emas      EMA[]
+  crosses   EMACross[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Price {
+  id        Int      @id @default(autoincrement())
+  tokenId   Int
+  token     Token    @relation(fields: [tokenId], references: [id])
+  price     Float
+  timestamp DateTime @default(now())
+
+  @@index([tokenId, timestamp])
+}
+
+model EMA {
+  id        Int       @id @default(autoincrement())
+  tokenId   Int
+  token     Token     @relation(fields: [tokenId], references: [id])
+  period    Int       // 60 or 223
+  timeframe String    // "5m", "1h", "4h"
+  value     Float
+  timestamp DateTime  @default(now())
+  crossesAsEMA1 EMACross[] @relation("EMA1")
+  crossesAsEMA2 EMACross[] @relation("EMA2")
+
+  @@unique([tokenId, period, timeframe, timestamp])
+  @@index([tokenId, timeframe, timestamp])
+}
+
+model EMACross {
+  id        Int      @id @default(autoincrement())
+  tokenId   Int
+  token     Token    @relation(fields: [tokenId], references: [id])
+  ema1Id    Int
+  ema1      EMA      @relation("EMA1", fields: [ema1Id], references: [id])
+  ema2Id    Int
+  ema2      EMA      @relation("EMA2", fields: [ema2Id], references: [id])
+  timeframe String   // "5m", "1h", "4h"
+  crossType String   // "BULLISH" or "BEARISH"
+  timestamp DateTime @default(now())
+
+  @@index([tokenId, timeframe, timestamp])
+}
