@@ -28,4 +28,4 @@ RUN chown -R node:node /app
 
 USER node
 
-CMD /wait-for.sh postgres:5432 -- sh -c "npx prisma migrate deploy && npm start" 
+CMD ["/wait-for.sh", "postgres", "5432", "sh", "-c", "npx prisma migrate deploy && npm start"] 
